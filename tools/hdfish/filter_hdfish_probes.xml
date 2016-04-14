@@ -1,0 +1,45 @@
+<tool id="hdfish_getprobes" name="Get HD FISH probes" version="1.0.1">
+<description>constrained within a BED file</description>
+
+<command>
+    python filter_hd_probes.py --bed $beds
+
+    #if str($probes) == "mm10"
+        --probes /storage/Projects/FISH2/hdfish/GRCm38_mm10_hdfish_probes.txt
+    #else
+        --probes /storage/Projects/FISH2/hdfish/GRCh37_hg19_hdfish_probes.txt
+    #end if
+
+    &gt; out.txt
+</command>
+
+<inputs>
+    <param format="bed" name="beds" type="data" label="BED file"/>
+    <param name="probes" type="select" label="Genome assembly to use">
+        <option value="mm10" selected="true">Mus musculus (GRCm38/mm10)</option>
+        <option value="hg19">Homo sapiens (GRCh37/hg19)</option>
+    </param>
+</inputs>
+
+<outputs>
+    <data format="text" name="probes_output" label="${tool.name} on ${on_string} (FISH probes)"/>
+</outputs>
+
+<help>
+This tool selects FISH probes from an HD-FISH database. The selected probes are output as a tab-delimited text file with each line corresponding to a FISH probe. The tab-delimited fields are as follows:
+
+UPSTREAM_PRIMER_SEQ | DOWNSTREAM_PRIMER_SEQ | CHROMOSOME | START_POS | END_POS
+
+.. class:: infomark
+
+**To cite HD-FISH:**
+Bienko M, Crosetto N, Teytelman L, Klemm S, Itzkovitz S, van Oudenaarden A. A Versatile genome-scale PCR-based pipeline for high-definition DNA FISH. Nat Methods. 2013 Feb;10(2):122-4. 
+
+.. class:: infomark
+
+HD-FISH probes were obtained from the HD-FISH website_. See the corresponding journal article_ for more information.
+
+.. _website: http://hdfish.nl/Downloads.html
+.. _article: http://www.ncbi.nlm.nih.gov/pubmed/23263692
+</help>
+</tool>

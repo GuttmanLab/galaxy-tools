@@ -1,0 +1,111 @@
+<tool id="bowtie2_offtarget_filter" name="Apply off-target filter" version="0.1.0">
+  <description>with Bowtie2</description>
+  <command>
+    /storage/Software/Alignment/bowtie2-2.1.0/bowtie2
+    -f
+    -N 0
+    -k 2
+    --rdg 0,6
+    --rfg 0,6
+    --score-min $functionType,$constantTerm,$coefficient
+    --no-unal
+    --no-hd
+    --quiet
+
+    #if str($genome) == "mm9"
+      -x /storage/Genomes/mm9/mm9
+    #else if str($genome) == "mm10"
+      -x /storage/Genomes/mm10/mm10
+    #else if str($genome) == "grcm38"
+      -x /storage/Genomes/mus_musculus_GRCm38_dna_primary/GRCm38.primary_assembly.genome
+    #else if str($genome) == "grch38"
+      -x /storage/Genomes/homo_sapiens_GRCh38_dna_primary/GRCh38.primary_assembly.genome
+    #else
+      -x /storage/Genomes/hg19/hg19
+    #end if
+
+    -U $guides
+    -S tmp_output.sam
+
+    &amp;&amp; /home/galaxy/galaxy/tools/crispr/sam_to_fasta_and_bed GG tmp_output.sam ${fasta_output} ${bed_output}
+    &amp;&amp; rm tmp_output.sam
+  </command>
+
+  <inputs>
+
+    <param format="fasta" name="guides" type="data" label="Guides file (FASTA)"/>
+
+    <param name="genome" type="select" label="Genome to use">
+      <option value="mm9" selected="true">Mus musculus (mm9)</option>
+      <option value="mm10">Mus musculus (mm10)</option>
+      <option value="grcm38">Mus musculus (GRCm38, primary assembly)</option>
+      <option value="grch38">Homo sapiens (GRCh38, primary assembly)</option>
+      <option value="hg19">Homo sapiens (hg19)</option>
+    </param>
+
+    <param name="functionType" type="select" label="Function type for score calculation">
+      <option value="L" selected="true">linear</option>
+      <option value="S">square root</option>
+      <option value="G">natural log</option>
+      <option value="C">constant</option>
+    </param>
+
+    <param name="constantTerm" type="float" value="0" label="Constant term for score calculation"/>
+    <param name="coefficient" type="float" value="-1.25" label="Coefficient for score calculation"/>
+    
+    <param name="pam" type="select" label="PAM sequence">
+      <option value="NGG" selected="true">NGG (S pyogenes)</option>
+    </param>
+
+  </inputs>
+
+  <outputs>
+    <data format="fasta" name="fasta_output" label="${tool.name} on ${on_string} (fasta)" />
+    <data format="bed" name="bed_output" label="${tool.name} on ${on_string} (bed)" />
+  </outputs>
+
+<help>
+This tool filters sequences that align to multiple positions in a reference genome using Bowtie2. Both the input and output are in FASTA format so that the output can be fed to other off-target filters if needed.
+
+------
+
+**Scoring alignments:** This tool does not use the default Bowtie2 scoring parameters. Instead, the following parameters are used: A mismatch scores -6. An indel scores -6 for each base inserted or deleted. An N scores -1. Note that a perfect alignment scores 0. Any imperfect alignment will have a negative score.
+
+------
+
+**Scoring threshold:** Bowtie2 does not accept a minimum number of mismatches/indels as a parameter. Instead, one provides a scoring function f(x), where x is the length of the guide sequence. This function is the minimum alignment score that a read must get to be considered a valid alignment. The function will be of the form
+
+f(x) = A * F(x) + B
+
+As an example, suppose that we have 20-mer guides and that we select F = linear, A = -0.75, and B = 10. Then we have
+
+f(x) = -0.75 * x + 10
+
+f(20) = -0.75 * 20 + 10 = -5
+
+so an alignment must have a score of at least -5 to be considered valid.
+
+As an example, suppose that we have 25-mer guides and that we select F = natural log, A = -2, and B = 1. Then we have
+
+f(x) = -2 * ln(x) + 1
+
+f(25) = -2 * ln(25) + 1 = -5.44
+
+so an alignment must have a score of at least -5.44 to be considered valid.
+
+------
+
+**For 20-mer guides, the parameters [F = linear, A = -1.25, B = 0] are suggested** (but have not been experimentally verified). With these parameters, Bowtie2 will keep reads scoring above -25, which corresponds to a Levenshtein distance of four or less.
+
+Bowtie2 has been set to report a maximum of two valid alignments per guide sequence. At least one of these, if not both, will be an off-target. More than two alignments are not reported (or even found) because it is assumed that the existence of a single off-target site invalidates the read.
+
+------
+
+.. class:: infomark
+
+Contact Mason or check the Bowtie2 manual_ for more information regarding scoring and valid alignments.
+
+.. _manual: http://bowtie-bio.sourceforge.net/bowtie2/manual.shtml
+
+</help>
+</tool>

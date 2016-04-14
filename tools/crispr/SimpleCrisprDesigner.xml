@@ -1,0 +1,130 @@
+<tool id="simple_crispr_designer" name="Design CRISPR guides" version="0.1.0">
+  <description>with no off-target filter</description>
+  <command>
+    java -jar /home/galaxy/galaxy/tools/crispr/SimpleCrisprDesigner.jar -g "$reference" -o tmp_output
+
+    #if $options.options_selector == 'advanced':
+      -maxl ${options.maxl}
+      -minl ${options.minl}
+
+      #if $options.efficacy.efficacy_toggle:
+        -ge true
+        -gem ${options.efficacy.max_eff}
+      #end if
+
+      #if $options.off_target.off_target_toggle:
+        -got true
+        -gotb "${options.off_target.bits_file}"
+        -gotm ${options.off_target.min_offtarg}
+      #end if
+
+      #unless $options.all_guides.all_guides_toggle:
+        -n ${options.all_guides.num_guides}
+      #end unless
+
+      #if $options.provide_bed.provide_bed_toggle:
+        -r "${options.provide_bed.intervals}"
+      #end if
+
+    #end if
+
+    2&gt;&amp;1
+    &amp;&amp; /home/galaxy/galaxy/tools/crispr/designer_output_to_fasta tmp_output.out tmp_output.bed &gt; ${fasta_output}
+    &amp;&amp; mv tmp_output.bed ${bed_output}
+    &amp;&amp; mv tmp_output.out ${tsv_output}
+  </command>
+
+  <inputs>
+
+    <param format="fasta" name="reference" type="data" label="Reference sequence file" />
+
+    <conditional name="options">
+
+      <param name="options_selector" type="select" label="Options Configuration">
+        <option value="basic" selected="true">Basic</option>
+        <option value="advanced">Advanced</option>
+      </param>
+
+      <when value="basic">
+      </when>
+
+      <when value="advanced">
+
+        <param name="maxl" type="integer" value="20" label="Maximum length of guide RNA (not including PAM sequence)"/>
+        <param name="minl" type="integer" value="20" label="Minimum length of guide RNA (not including PAM sequence)"/>
+
+        <conditional name="efficacy">
+          <param name="efficacy_toggle" type="boolean" truevalue="eff_on" falsevalue="eff_off" checked="False" label="Apply efficacy filter?"/>
+          <when value="eff_on">
+            <param name="max_eff" type="float" value="0.6" label="Maximum guide efficacy"/>
+          </when>
+          <when value="eff_off">
+          </when>
+        </conditional>
+
+        <conditional name="off_target">
+          <param name="off_target_toggle" type="boolean" truevalue="offtarg_on" falsevalue="offtarg_off" checked="False" label="Apply off-target filter?"/>
+          <when value="offtarg_on">
+            <param name="bits_file" type="data" label="Off-target bits file"/>
+            <param name="min_offtarg" type="integer" value="30" label="Minimum off-target score"/>
+          </when>
+          <when value="offtarg_off">
+          </when>
+        </conditional>
+
+        <conditional name="provide_bed">
+          <param name="provide_bed_toggle" type="boolean" truevalue="bed_on" falsevalue="bed_off" checked="False" label="Restrict guide search to BED intervals?"/>
+          <when value="bed_on">
+            <param format="bed" name="intervals" type="data" label="BED interval file" />
+          </when>
+          <when value="bed_off">
+          </when>
+        </conditional>
+
+        <conditional name="all_guides">
+          <param name="all_guides_toggle" type="boolean" truevalue="get_all" falsevalue="get_some" checked="True" label="Get all guides?"/>
+          <when value="get_all">
+          </when>
+          <when value="get_some">
+            <param name="num_guides" type="integer" value="1" label="Number of guides to design per sequence/interval"/>
+          </when>
+        </conditional>
+
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="bed" name="bed_output" label="${tool.name} on ${on_string} (bed)" />
+    <data format="tsv" name="tsv_output" label="${tool.name} on ${on_string} (tsv)" />
+    <data format="fasta" name="fasta_output" label="${tool.name} on ${on_string} (fasta)" />
+  </outputs>
+
+<help>
+This tool generates CRISPR gRNAs from an input FASTA file, and was developed by Pam Russell. It outputs three files, a BED file representation of the guides, a custom tab-delimited file of the guides and their positions within the input file, and a FASTA file generated from the TSV file meant to be fed to an off-target filter.
+
+------
+
+.. class:: infomark
+
+The efficacy filter was developed by Tim Wang, who used empirical results from a large pool of gRNAs in an unknown cell type. (The cell type is known, just unknown to us.) The higher the score, the worse the efficacy; Tim recommends 0.6 as the cut-off. The current implementation of the guide designer runs an R script given to Pam by Tim. Contact Tim for more details.
+
+------
+
+.. class:: infomark
+
+The off-target filter was developed by Jesse Engreitz. It requires a "bits file", which is a compressed index of all 20-mer sites that are followed by NGG in the genome. (After compression, each nucleotide is represented by two bits, hence the name "bits file".) For each guide, the filter does a brute-force comparison with every indexed sequence, and anything that has less than five mismatches conributes to the off-target score. The off-target score is calculated with the algorithm given at Feng Zhang's site_.
+
+.. class:: warningmark
+
+**WARNING: This filter is very slow, and is only suitable for screening a small number of guides.** However, it is guaranteed to find all off-target sites. As an alternative, the FASTA output of this designer can be passed to less sensitive off-target filters built on top of sequence aligners.
+
+.. class:: warningmark
+
+**WARNING: This filter will only work for 20-mer guides that have an NGG PAM sequence. Furthermore, we only have the bits file for the mm9 build. Do not use this filter for anything else!**
+
+.. _site: crispr.mit.edu/about
+
+</help>
+
+</tool>

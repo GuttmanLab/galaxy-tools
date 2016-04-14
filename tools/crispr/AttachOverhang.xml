@@ -1,0 +1,42 @@
+<tool id="attach_overhang" name="Attach overhang sequences" version="0.3.0">
+  <command>
+    /home/galaxy/galaxy/tools/crispr/attach_overhang_to_fasta ${overhang1} ${overhang2} ${guides} > ${final_guide_output}
+  </command>
+
+  <inputs>
+    <param format="fasta" name="guides" type="data" label="Guides file (FASTA)"/>
+    <param name="overhang1" type="text" label="Overhang to add (top strand)"/>
+    <param name="overhang2" type="text" label="Overhang to add (bottom strand)"/>
+  </inputs>
+
+  <outputs>
+    <data format="text" name="final_guide_output" label="${tool.name} on ${on_string} (final guide output)" />
+  </outputs>
+
+<help>
+This tool accepts a FASTA file of guide sequences as input, outputting each guide sequence and its reverse complement on separate lines, both prepended (that is, at the 5' end) with given overhang sequences. The names of the FASTA records must end in either "+" or "-", as this tool uses the name to determine the strandedness of each guide sequence. See below for an example.
+
+------
+
+As an example, passing the overhang sequences "AGGTAG" and "TCGTAG" with the following FASTA records:
+
+  >test_fasta1:+
+
+  AGGTTAGAGTCGA
+
+  >test_fasta2:-
+
+  TGCTAGTAGTCGA
+
+will produce
+
+  AGGTAGAGGTTAGAGTCGA
+
+  TCGTAGTCGACTCTAACCT
+
+  AGGTAGTGCTAGTAGTCGA
+
+  TCGTAGTCGACTACTAGCA
+
+</help>
+</tool>

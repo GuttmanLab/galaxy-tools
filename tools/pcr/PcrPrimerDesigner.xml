@@ -1,0 +1,41 @@
+<tool id="pcr_primer_designer" name="Design PCR primers" version="0.1.0">
+
+  <command>
+    java -jar /home/galaxy/galaxy/tools/pcr_primer_design/PcrPrimerDesigner.jar
+    -c "$config"
+    -p3c /home/galaxy/galaxy/tools/pcr_primer_design/primer3_core
+    -rc "$antisense"
+    -s "$seqs"
+    -o "$pcr_primers"
+
+    #if $provide_regions.provide_regions_toggle == 'reg_on':
+      -r ${provide_regions.intervals}
+    #end if
+
+    2&gt;&amp;1
+  </command>
+
+  <inputs>
+    <param format="fasta" name="seqs" type="data" label="Sequences to design against (FASTA)" />
+    <param name="config" type="select" label="Primer3 configuration">
+      <option value="synthetic" selected="true">synthetic</option>
+      <option value="qPCR">qPCR</option>
+      <option value="RAPqPCR">RAP qPCR</option>
+      <option value="deletion_plasmid">deletion plasmid</option>
+    </param>
+    <param name="antisense" type="boolean" truevalue="true" falsevalue="false" checked="True" label="Design primers against antisense strand?"/>
+    <conditional name="provide_regions">
+      <param name="provide_regions_toggle" type="boolean" truevalue="reg_on" falsevalue="reg_off" checked="false" label="Restrict design to regions?"/>
+      <when value="reg_on">
+        <param format="text" name="intervals" type="data" label="region coordinates file" />
+      </when>
+      <when value="reg_off">
+      </when>
+    </conditional>
+  </inputs>
+
+  <outputs>
+    <data format="tsv" name="pcr_primers" label="${tool.name} on ${on_string}" />
+  </outputs>
+
+</tool>
