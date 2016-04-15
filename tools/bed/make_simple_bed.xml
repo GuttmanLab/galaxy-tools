@@ -16,6 +16,6 @@
   </inputs>
 
   <outputs>
-    <data format="bed" name="bed_output" label="${tool.name} on ${on_string} (final guide output)" />
+    <data format="bed" name="bed_output" label="${tool.name} on ${on_string} (BED)" />
   </outputs>
 </tool>
