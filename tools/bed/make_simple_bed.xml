@@ -1,0 +1,21 @@
+<tool id="make_simple_bed" name="Make a simple, three-column BED file" version="0.1.0">
+  <command>
+    python /home/galaxy/galaxy/tools/bed/make_simple_bed.py
+    #for r in $recs
+    --bed "$r.chrom&#09;$r.start&#09;$r.end"
+    #end for
+    &gt; $bed_output
+  </command>
+
+  <inputs>
+    <repeat name="recs" title="BED records to be written">
+      <param name="chrom" type="text" label="Chromosome" help="ex: chr19"/>
+      <param name="start" type="integer" value="0" label="Start position" help="no commas, ex: 5795690"/>
+      <param name="end" type="integer" value="0" label="End position" help="no commas, ex: 5802971"/>
+    </repeat>
+  </inputs>
+
+  <outputs>
+    <data format="bed" name="bed_output" label="${tool.name} on ${on_string} (final guide output)" />
+  </outputs>
+</tool>
